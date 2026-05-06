@@ -104,6 +104,33 @@
       margin-bottom: 1rem;
       font-size: 0.95rem;
     }
+    .autocomplete-wrapper { position: relative; }
+    .autocomplete-list {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .autocomplete-list li {
+      padding: 0.55rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.92rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .autocomplete-list li:last-child { border-bottom: none; }
+    .autocomplete-list li:hover { background: #fef9ec; color: #e06c1f; }
   </style>
 </head>
 <body>
@@ -135,7 +162,10 @@
 
       <div class="form-group">
         <label for="adresse">Adresse dans le quartier</label>
-        <input type="text" id="adresse" name="adresse" placeholder="12 rue des Lilas">
+        <div class="autocomplete-wrapper">
+          <input type="text" id="adresse" name="adresse" placeholder="12 rue des Lilas" autocomplete="off">
+          <ul class="autocomplete-list" id="adresse-suggestions"></ul>
+        </div>
       </div>
 
       <div class="form-group">
@@ -186,6 +216,59 @@
   </div>
 
   <script>
+    // --- Autocomplétion adresse SITG ---
+    var adresseInput = document.getElementById('adresse');
+    var suggestionsList = document.getElementById('adresse-suggestions');
+    var debounceTimer;
+
+    adresseInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      var query = this.value.trim();
+      if (query.length < 3) { closeSuggestions(); return; }
+      debounceTimer = setTimeout(function() { fetchSuggestions(query); }, 300);
+    });
+
+    function fetchSuggestions(query) {
+      var url = 'https://ge.ch/teradressews_public/v1/rest/search?searchText='
+        + encodeURIComponent(query) + '&limit=6';
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(renderSuggestions)
+        .catch(closeSuggestions);
+    }
+
+    function renderSuggestions(data) {
+      suggestionsList.innerHTML = '';
+      if (!data || !data.length) { closeSuggestions(); return; }
+      data.forEach(function(item) {
+        var label = item.label || item.adresse || item.ADRESSE || item.displayName || '';
+        if (!label) return;
+        var li = document.createElement('li');
+        li.textContent = label;
+        li.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          adresseInput.value = label;
+          closeSuggestions();
+        });
+        suggestionsList.appendChild(li);
+      });
+      if (suggestionsList.children.length) suggestionsList.style.display = 'block';
+    }
+
+    function closeSuggestions() {
+      suggestionsList.style.display = 'none';
+      suggestionsList.innerHTML = '';
+    }
+
+    adresseInput.addEventListener('blur', function() {
+      setTimeout(closeSuggestions, 150);
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeSuggestions();
+    });
+
+    // --- Formspree ---
     // Remplacer YOUR_FORM_ID par l'identifiant fourni par Formspree après création du formulaire
     var FORMSPREE_URL = 'https://formspree.io/f/YOUR_FORM_ID';
 
