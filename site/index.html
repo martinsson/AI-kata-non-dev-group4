@@ -94,6 +94,16 @@
       color: #2d7a2d;
       font-size: 1.1rem;
     }
+    .error-msg {
+      display: none;
+      background: #fdecea;
+      color: #b71c1c;
+      border: 1px solid #f5c6cb;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 <body>
@@ -164,6 +174,9 @@
         <textarea id="commentaire" name="commentaire" placeholder="Une idée d'animation, une question…"></textarea>
       </div>
 
+      <div class="error-msg" id="error-msg">
+        Une erreur est survenue lors de l'envoi. Merci de réessayer dans quelques instants.
+      </div>
       <button type="submit">S'inscrire à la fête</button>
     </form>
 
@@ -173,10 +186,39 @@
   </div>
 
   <script>
-    document.getElementById('fete-form').addEventListener('submit', function(e) {
+    // Remplacer YOUR_FORM_ID par l'identifiant fourni par Formspree après création du formulaire
+    var FORMSPREE_URL = 'https://formspree.io/f/YOUR_FORM_ID';
+
+    document.getElementById('fete-form').addEventListener('submit', async function(e) {
       e.preventDefault();
-      this.style.display = 'none';
-      document.getElementById('success-msg').style.display = 'block';
+      var form = this;
+      var btn = form.querySelector('button[type="submit"]');
+      var errorMsg = document.getElementById('error-msg');
+
+      btn.disabled = true;
+      btn.textContent = 'Envoi en cours…';
+      errorMsg.style.display = 'none';
+
+      try {
+        var response = await fetch(FORMSPREE_URL, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (response.ok) {
+          form.style.display = 'none';
+          document.getElementById('success-msg').style.display = 'block';
+        } else {
+          errorMsg.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = "S'inscrire à la fête";
+        }
+      } catch (_) {
+        errorMsg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = "S'inscrire à la fête";
+      }
     });
   </script>
 </body>
