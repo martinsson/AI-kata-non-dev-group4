@@ -98,6 +98,9 @@
     .table-wrap { overflow-x: auto; }
     .ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 400; font-size: 0.85rem; padding: 0.4rem 0.8rem; }
     .ghost:hover { color: var(--danger); border-color: var(--danger); }
+    .edit-btn { background: transparent; color: var(--accent); border: 1px solid var(--border); padding: 0.3rem 0.6rem; font-size: 0.8rem; font-weight: 500; margin-right: 0.35rem; }
+    .edit-btn:hover { border-color: var(--accent); filter: none; }
+    .form-editing { border: 1px solid var(--accent); }
     .hidden { display: none; }
     .filters {
       display: flex;
@@ -164,7 +167,8 @@
         </div>
         <div class="field">
           <label for="lastName">Nom</label>
-          <input id="lastName" type="text" maxlength="40" required>
+          <input id="lastName" type="text" maxlength="40" required aria-describedby="dup-error">
+          <span id="dup-error" style="color:var(--danger);font-size:0.8rem;margin-top:0.2rem;display:none">Cette personne est déjà recensée.</span>
         </div>
         <div class="field">
           <label for="dob">Date de naissance</label>
@@ -207,8 +211,9 @@
           <label for="job">Profession</label>
           <input id="job" type="text" maxlength="60" list="professions-list" autocomplete="off">
         </div>
-        <div class="field">
-          <button type="submit">Ajouter</button>
+        <div class="field" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button type="submit" id="submit-btn">Ajouter</button>
+          <button type="button" id="cancel-edit-btn" class="ghost" style="display:none">Annuler</button>
         </div>
       </form>
     </div>
@@ -392,6 +397,25 @@
     }
 
     const dobError = document.getElementById("dob-error");
+    const dupError = document.getElementById("dup-error");
+    const submitBtn = document.getElementById("submit-btn");
+    const cancelEditBtn = document.getElementById("cancel-edit-btn");
+
+    let editingId = null;
+
+    function resetForm() {
+      form.reset();
+      closeSuggestions();
+      editingId = null;
+      submitBtn.textContent = "Ajouter";
+      cancelEditBtn.style.display = "none";
+      form.classList.remove("form-editing");
+      dobError.style.display = "none";
+      dupError.style.display = "none";
+      fields.firstName.focus();
+    }
+
+    cancelEditBtn.addEventListener("click", resetForm);
 
     fields.dob.addEventListener("input", () => {
       const age = calcAge(fields.dob.value);
@@ -400,6 +424,10 @@
         dobError.style.display = age < 18 ? "block" : "none";
       }
     });
+
+    [fields.firstName, fields.lastName].forEach((el) =>
+      el.addEventListener("input", () => { dupError.style.display = "none"; })
+    );
 
     function load() {
       try {
@@ -470,7 +498,10 @@
             <td>${escapeHtml(p.sex) || "—"}</td>
             <td>${highlight(p.city, term)}</td>
             <td>${highlight(p.job, term)}</td>
-            <td><button class="del-btn" data-id="${p.id}">Supprimer</button></td>
+            <td style="white-space:nowrap">
+              <button class="edit-btn" data-id="${p.id}">Modifier</button>
+              <button class="del-btn" data-id="${p.id}">Supprimer</button>
+            </td>
           `;
           tableBody.appendChild(tr);
         });
@@ -530,19 +561,56 @@
       dobError.style.display = "none";
 
       const people = load();
-      people.push(person);
+      const duplicate = people.some((p) =>
+        p.id !== editingId &&
+        p.firstName.trim().toLowerCase() === person.firstName.toLowerCase() &&
+        p.lastName.trim().toLowerCase() === person.lastName.toLowerCase()
+      );
+      if (duplicate) {
+        dupError.style.display = "block";
+        fields.firstName.focus();
+        return;
+      }
+      dupError.style.display = "none";
+
+      if (editingId) {
+        const idx = people.findIndex((p) => p.id === editingId);
+        if (idx !== -1) people[idx] = { ...people[idx], ...person, id: editingId };
+      } else {
+        people.push(person);
+      }
       save(people);
-      form.reset();
-      closeSuggestions();
-      fields.firstName.focus();
+      resetForm();
       render();
     });
 
     tableBody.addEventListener("click", (e) => {
-      const btn = e.target.closest(".del-btn");
-      if (!btn) return;
-      const id = btn.dataset.id;
-      save(load().filter((p) => p.id !== id));
+      if (e.target.closest(".edit-btn")) {
+        const id = e.target.closest(".edit-btn").dataset.id;
+        const p = load().find((x) => x.id === id);
+        if (!p) return;
+        editingId = id;
+        fields.firstName.value = p.firstName;
+        fields.lastName.value = p.lastName;
+        fields.dob.value = p.dob;
+        fields.age.value = p.age;
+        fields.civil.value = p.civil || "";
+        fields.sex.value = p.sex || "";
+        fields.city.value = p.city || "";
+        fields.job.value = p.job || "";
+        submitBtn.textContent = "Mettre à jour";
+        cancelEditBtn.style.display = "inline-flex";
+        form.classList.add("form-editing");
+        dupError.style.display = "none";
+        dobError.style.display = "none";
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+        fields.firstName.focus();
+        return;
+      }
+      const delBtn = e.target.closest(".del-btn");
+      if (!delBtn) return;
+      save(load().filter((p) => p.id !== delBtn.dataset.id));
+      if (editingId === delBtn.dataset.id) resetForm();
       render();
     });
 
