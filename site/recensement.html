@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recensement de la population</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --danger: #f87171;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top, #1e293b, var(--bg));
+      color: var(--text);
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { margin: 0 0 0.25rem; font-size: 2rem; }
+    .subtitle { color: var(--muted); margin: 0 0 2rem; }
+    a.back { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+    a.back:hover { text-decoration: underline; }
+    .card {
+      background: var(--card);
+      padding: 1.5rem;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { margin: 0 0 1rem; font-size: 1.15rem; }
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      align-items: end;
+    }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    label { font-size: 0.85rem; color: var(--muted); }
+    input, select {
+      background: #0f172a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.75rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      outline: none;
+      width: 100%;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 0.65rem 1.3rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.1s ease, filter 0.1s ease;
+    }
+    button:hover { filter: brightness(1.1); }
+    button:active { transform: scale(0.97); }
+    .stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .stat {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      flex: 1;
+      min-width: 130px;
+      text-align: center;
+    }
+    .stat .value { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+    .stat .label { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.6rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    tr:last-child td { border-bottom: none; }
+    .empty { color: var(--muted); text-align: center; padding: 2rem 0; }
+    .del-btn {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .del-btn:hover { border-color: var(--danger); filter: none; }
+    .table-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+    .table-wrap { overflow-x: auto; }
+    .ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 400; font-size: 0.85rem; padding: 0.4rem 0.8rem; }
+    .ghost:hover { color: var(--danger); border-color: var(--danger); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a class="back" href="index.html">&larr; Retour à l'accueil</a>
+    <h1>Recensement de la population</h1>
+    <p class="subtitle">Enregistrez et consultez les habitants. Les données sont stockées localement dans votre navigateur.</p>
+
+    <div class="card">
+      <h2>Ajouter une personne</h2>
+      <form id="person-form">
+        <div class="field">
+          <label for="firstName">Prénom</label>
+          <input id="firstName" type="text" maxlength="40" required>
+        </div>
+        <div class="field">
+          <label for="lastName">Nom</label>
+          <input id="lastName" type="text" maxlength="40" required>
+        </div>
+        <div class="field">
+          <label for="age">Âge</label>
+          <input id="age" type="number" min="0" max="130" required>
+        </div>
+        <div class="field">
+          <label for="sex">Sexe</label>
+          <select id="sex">
+            <option value="">—</option>
+            <option value="Femme">Femme</option>
+            <option value="Homme">Homme</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="city">Ville / Adresse</label>
+          <input id="city" type="text" maxlength="80">
+        </div>
+        <div class="field">
+          <label for="job">Profession</label>
+          <input id="job" type="text" maxlength="60">
+        </div>
+        <div class="field">
+          <button type="submit">Ajouter</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="card">
+      <div class="table-head">
+        <h2 style="margin:0">Population recensée</h2>
+        <button class="ghost" id="clear-btn">Tout effacer</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Prénom</th>
+              <th>Nom</th>
+              <th>Âge</th>
+              <th>Sexe</th>
+              <th>Ville / Adresse</th>
+              <th>Profession</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="empty hidden" id="empty-msg">Aucune personne recensée pour le moment.</div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "recensement:people";
+
+    const form = document.getElementById("person-form");
+    const tableBody = document.getElementById("table-body");
+    const emptyMsg = document.getElementById("empty-msg");
+    const statsEl = document.getElementById("stats");
+    const clearBtn = document.getElementById("clear-btn");
+
+    const fields = {
+      firstName: document.getElementById("firstName"),
+      lastName: document.getElementById("lastName"),
+      age: document.getElementById("age"),
+      sex: document.getElementById("sex"),
+      city: document.getElementById("city"),
+      job: document.getElementById("job"),
+    };
+
+    function load() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function save(people) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(people));
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "").replace(/[&<>"']/g, (c) => (
+        { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+      ));
+    }
+
+    function render() {
+      const people = load();
+      tableBody.innerHTML = "";
+
+      if (people.length === 0) {
+        emptyMsg.classList.remove("hidden");
+      } else {
+        emptyMsg.classList.add("hidden");
+        people.forEach((p) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${escapeHtml(p.firstName)}</td>
+            <td>${escapeHtml(p.lastName)}</td>
+            <td>${escapeHtml(p.age)}</td>
+            <td>${escapeHtml(p.sex) || "—"}</td>
+            <td>${escapeHtml(p.city) || "—"}</td>
+            <td>${escapeHtml(p.job) || "—"}</td>
+            <td><button class="del-btn" data-id="${p.id}">Supprimer</button></td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      }
+
+      renderStats(people);
+    }
+
+    function renderStats(people) {
+      const total = people.length;
+      const ages = people.map((p) => Number(p.age)).filter((a) => !isNaN(a));
+      const avgAge = ages.length ? Math.round(ages.reduce((s, a) => s + a, 0) / ages.length) : "—";
+      const cities = new Set(people.map((p) => (p.city || "").trim().toLowerCase()).filter(Boolean));
+
+      statsEl.innerHTML = `
+        <div class="stat"><div class="value">${total}</div><div class="label">Personnes recensées</div></div>
+        <div class="stat"><div class="value">${avgAge}</div><div class="label">Âge moyen</div></div>
+        <div class="stat"><div class="value">${cities.size}</div><div class="label">Villes distinctes</div></div>
+      `;
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const person = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        firstName: fields.firstName.value.trim(),
+        lastName: fields.lastName.value.trim(),
+        age: fields.age.value.trim(),
+        sex: fields.sex.value,
+        city: fields.city.value.trim(),
+        job: fields.job.value.trim(),
+      };
+      if (!person.firstName || !person.lastName || !person.age) return;
+
+      const people = load();
+      people.push(person);
+      save(people);
+      form.reset();
+      fields.firstName.focus();
+      render();
+    });
+
+    tableBody.addEventListener("click", (e) => {
+      const btn = e.target.closest(".del-btn");
+      if (!btn) return;
+      const id = btn.dataset.id;
+      save(load().filter((p) => p.id !== id));
+      render();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      if (load().length === 0) return;
+      if (confirm("Effacer tout le recensement ? Cette action est irréversible.")) {
+        save([]);
+        render();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
