@@ -457,11 +457,22 @@
       if (q.length < 3) { closeSuggestions(); return; }
       acTimer = setTimeout(async () => {
         try {
-          const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=6`;
+          // Photon (OpenStreetMap) — bbox restreint à la Suisse
+          const bbox = "5.9559,45.8180,10.4923,47.8084";
+          const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=fr&bbox=${bbox}`;
           const res = await fetch(url);
           if (!res.ok) return;
           const data = await res.json();
-          showSuggestions(data.features.map((f) => f.properties.label));
+          const labels = data.features.map((f) => {
+            const p = f.properties;
+            const street = [p.street, p.housenumber].filter(Boolean).join(" ");
+            const locality = [p.postcode, p.city || p.county].filter(Boolean).join(" ");
+            return [p.name !== street ? p.name : null, street, locality]
+              .filter(Boolean)
+              .filter((v, i, a) => a.indexOf(v) === i)
+              .join(", ");
+          }).filter(Boolean);
+          showSuggestions(labels);
         } catch { /* API indisponible : on laisse la saisie libre */ }
       }, 300);
     });
