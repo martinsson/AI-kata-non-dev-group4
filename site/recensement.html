@@ -168,7 +168,8 @@
         </div>
         <div class="field">
           <label for="dob">Date de naissance</label>
-          <input id="dob" type="date" max="" required>
+          <input id="dob" type="date" max="" required aria-describedby="dob-error">
+          <span id="dob-error" style="color:var(--danger);font-size:0.8rem;margin-top:0.2rem;display:none">La personne doit avoir au moins 18 ans.</span>
         </div>
         <div class="field">
           <label for="age">Âge</label>
@@ -369,8 +370,10 @@
       job: document.getElementById("job"),
     };
 
-    // Limite le calendrier à aujourd'hui
-    fields.dob.max = new Date().toISOString().slice(0, 10);
+    // Limite le calendrier à la date maximale pour avoir 18 ans révolus
+    const maxDob = new Date();
+    maxDob.setFullYear(maxDob.getFullYear() - 18);
+    fields.dob.max = maxDob.toISOString().slice(0, 10);
 
     function calcAge(dob) {
       if (!dob) return null;
@@ -388,9 +391,14 @@
       return `${d}.${m}.${y}`;
     }
 
+    const dobError = document.getElementById("dob-error");
+
     fields.dob.addEventListener("input", () => {
       const age = calcAge(fields.dob.value);
-      if (age !== null) fields.age.value = age;
+      if (age !== null) {
+        fields.age.value = age;
+        dobError.style.display = age < 18 ? "block" : "none";
+      }
     });
 
     function load() {
@@ -514,6 +522,12 @@
         job: fields.job.value.trim(),
       };
       if (!person.firstName || !person.lastName || !person.dob) return;
+      if (calcAge(person.dob) < 18) {
+        dobError.style.display = "block";
+        fields.dob.focus();
+        return;
+      }
+      dobError.style.display = "none";
 
       const people = load();
       people.push(person);
