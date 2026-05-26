@@ -97,6 +97,29 @@
     .table-wrap { overflow-x: auto; }
     .ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 400; font-size: 0.85rem; padding: 0.4rem 0.8rem; }
     .ghost:hover { color: var(--danger); border-color: var(--danger); }
+    .hidden { display: none; }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+    }
+    .filters .field { flex: 1; min-width: 150px; }
+    .filters .field.short { max-width: 120px; }
+    .reset-link {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0.4rem 0;
+      text-decoration: underline;
+      align-self: flex-end;
+    }
+    .reset-link:hover { color: var(--text); filter: none; }
+    .result-count { color: var(--muted); font-size: 0.85rem; }
+    mark { background: rgba(56, 189, 248, 0.25); color: var(--accent); border-radius: 2px; }
   </style>
 </head>
 <body>
@@ -146,8 +169,36 @@
     <div class="stats" id="stats"></div>
 
     <div class="card">
+      <h2 style="margin:0 0 1rem">Recherche &amp; filtres</h2>
+      <div class="filters">
+        <div class="field">
+          <label for="search">Recherche libre</label>
+          <input id="search" type="search" placeholder="Nom, ville, profession…">
+        </div>
+        <div class="field short">
+          <label for="filter-sex">Sexe</label>
+          <select id="filter-sex">
+            <option value="">Tous</option>
+            <option value="Femme">Femme</option>
+            <option value="Homme">Homme</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="field short">
+          <label for="age-min">Âge min</label>
+          <input id="age-min" type="number" min="0" max="130" placeholder="0">
+        </div>
+        <div class="field short">
+          <label for="age-max">Âge max</label>
+          <input id="age-max" type="number" min="0" max="130" placeholder="130">
+        </div>
+        <button class="reset-link" id="reset-filters">Réinitialiser</button>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="table-head">
-        <h2 style="margin:0">Population recensée</h2>
+        <h2 style="margin:0">Population recensée <span class="result-count" id="result-count"></span></h2>
         <button class="ghost" id="clear-btn">Tout effacer</button>
       </div>
       <div class="table-wrap">
@@ -178,6 +229,12 @@
     const emptyMsg = document.getElementById("empty-msg");
     const statsEl = document.getElementById("stats");
     const clearBtn = document.getElementById("clear-btn");
+    const resultCount = document.getElementById("result-count");
+    const searchInput = document.getElementById("search");
+    const filterSex = document.getElementById("filter-sex");
+    const ageMin = document.getElementById("age-min");
+    const ageMax = document.getElementById("age-max");
+    const resetFiltersBtn = document.getElementById("reset-filters");
 
     const fields = {
       firstName: document.getElementById("firstName"),
@@ -206,44 +263,92 @@
       ));
     }
 
+    function highlight(str, term) {
+      if (!term) return escapeHtml(str);
+      const escaped = escapeHtml(str);
+      const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return escaped.replace(new RegExp(`(${escapedTerm})`, "gi"), "<mark>$1</mark>");
+    }
+
+    function applyFilters(people) {
+      const term = searchInput.value.trim().toLowerCase();
+      const sex = filterSex.value;
+      const min = ageMin.value !== "" ? Number(ageMin.value) : null;
+      const max = ageMax.value !== "" ? Number(ageMax.value) : null;
+
+      return people.filter((p) => {
+        if (sex && p.sex !== sex) return false;
+        const age = Number(p.age);
+        if (min !== null && age < min) return false;
+        if (max !== null && age > max) return false;
+        if (term) {
+          const haystack = [p.firstName, p.lastName, p.city, p.job].join(" ").toLowerCase();
+          if (!haystack.includes(term)) return false;
+        }
+        return true;
+      });
+    }
+
     function render() {
-      const people = load();
+      const all = load();
+      const filtered = applyFilters(all);
+      const term = searchInput.value.trim();
+
       tableBody.innerHTML = "";
 
-      if (people.length === 0) {
+      if (filtered.length === 0) {
+        emptyMsg.textContent = all.length === 0
+          ? "Aucune personne recensée pour le moment."
+          : "Aucun résultat ne correspond aux filtres.";
         emptyMsg.classList.remove("hidden");
       } else {
         emptyMsg.classList.add("hidden");
-        people.forEach((p) => {
+        filtered.forEach((p) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td>${escapeHtml(p.firstName)}</td>
-            <td>${escapeHtml(p.lastName)}</td>
+            <td>${highlight(p.firstName, term)}</td>
+            <td>${highlight(p.lastName, term)}</td>
             <td>${escapeHtml(p.age)}</td>
             <td>${escapeHtml(p.sex) || "—"}</td>
-            <td>${escapeHtml(p.city) || "—"}</td>
-            <td>${escapeHtml(p.job) || "—"}</td>
+            <td>${highlight(p.city, term)}</td>
+            <td>${highlight(p.job, term)}</td>
             <td><button class="del-btn" data-id="${p.id}">Supprimer</button></td>
           `;
           tableBody.appendChild(tr);
         });
       }
 
-      renderStats(people);
+      resultCount.textContent = all.length > 0
+        ? `— ${filtered.length} / ${all.length}`
+        : "";
+
+      renderStats(filtered, all.length);
     }
 
-    function renderStats(people) {
-      const total = people.length;
+    function renderStats(people, total) {
       const ages = people.map((p) => Number(p.age)).filter((a) => !isNaN(a));
       const avgAge = ages.length ? Math.round(ages.reduce((s, a) => s + a, 0) / ages.length) : "—";
       const cities = new Set(people.map((p) => (p.city || "").trim().toLowerCase()).filter(Boolean));
 
       statsEl.innerHTML = `
         <div class="stat"><div class="value">${total}</div><div class="label">Personnes recensées</div></div>
-        <div class="stat"><div class="value">${avgAge}</div><div class="label">Âge moyen</div></div>
+        <div class="stat"><div class="value">${people.length}</div><div class="label">Résultats affichés</div></div>
+        <div class="stat"><div class="value">${avgAge}</div><div class="label">Âge moyen (filtrés)</div></div>
         <div class="stat"><div class="value">${cities.size}</div><div class="label">Villes distinctes</div></div>
       `;
     }
+
+    [searchInput, filterSex, ageMin, ageMax].forEach((el) =>
+      el.addEventListener("input", render)
+    );
+
+    resetFiltersBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      filterSex.value = "";
+      ageMin.value = "";
+      ageMax.value = "";
+      render();
+    });
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
