@@ -166,8 +166,24 @@
           <input id="lastName" type="text" maxlength="40" required>
         </div>
         <div class="field">
+          <label for="dob">Date de naissance</label>
+          <input id="dob" type="date" max="">
+        </div>
+        <div class="field">
           <label for="age">Âge</label>
           <input id="age" type="number" min="0" max="130" required>
+        </div>
+        <div class="field">
+          <label for="civil">État civil</label>
+          <select id="civil">
+            <option value="">—</option>
+            <option value="Célibataire">Célibataire</option>
+            <option value="Marié(e)">Marié(e)</option>
+            <option value="En union civile">En union civile</option>
+            <option value="Divorcé(e)">Divorcé(e)</option>
+            <option value="Séparé(e)">Séparé(e)</option>
+            <option value="Veuf / Veuve">Veuf / Veuve</option>
+          </select>
         </div>
         <div class="field">
           <label for="sex">Sexe</label>
@@ -236,7 +252,9 @@
             <tr>
               <th>Prénom</th>
               <th>Nom</th>
+              <th>Date de naissance</th>
               <th>Âge</th>
+              <th>État civil</th>
               <th>Sexe</th>
               <th>Ville / Adresse</th>
               <th>Profession</th>
@@ -342,11 +360,37 @@
     const fields = {
       firstName: document.getElementById("firstName"),
       lastName: document.getElementById("lastName"),
+      dob: document.getElementById("dob"),
       age: document.getElementById("age"),
+      civil: document.getElementById("civil"),
       sex: document.getElementById("sex"),
       city: document.getElementById("city"),
       job: document.getElementById("job"),
     };
+
+    // Limite le calendrier à aujourd'hui
+    fields.dob.max = new Date().toISOString().slice(0, 10);
+
+    function calcAge(dob) {
+      if (!dob) return null;
+      const today = new Date();
+      const birth = new Date(dob);
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+      return age >= 0 ? age : 0;
+    }
+
+    function formatDob(dob) {
+      if (!dob) return "—";
+      const [y, m, d] = dob.split("-");
+      return `${d}.${m}.${y}`;
+    }
+
+    fields.dob.addEventListener("input", () => {
+      const age = calcAge(fields.dob.value);
+      if (age !== null) fields.age.value = age;
+    });
 
     function load() {
       try {
@@ -411,7 +455,9 @@
           tr.innerHTML = `
             <td>${highlight(p.firstName, term)}</td>
             <td>${highlight(p.lastName, term)}</td>
+            <td>${formatDob(p.dob)}</td>
             <td>${escapeHtml(p.age)}</td>
+            <td>${escapeHtml(p.civil) || "—"}</td>
             <td>${escapeHtml(p.sex) || "—"}</td>
             <td>${highlight(p.city, term)}</td>
             <td>${highlight(p.job, term)}</td>
@@ -459,7 +505,9 @@
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         firstName: fields.firstName.value.trim(),
         lastName: fields.lastName.value.trim(),
+        dob: fields.dob.value,
         age: fields.age.value.trim(),
+        civil: fields.civil.value,
         sex: fields.sex.value,
         city: fields.city.value.trim(),
         job: fields.job.value.trim(),
