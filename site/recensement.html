@@ -120,6 +120,32 @@
     .reset-link:hover { color: var(--text); filter: none; }
     .result-count { color: var(--muted); font-size: 0.85rem; }
     mark { background: rgba(56, 189, 248, 0.25); color: var(--accent); border-radius: 2px; }
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      z-index: 200;
+      list-style: none;
+      margin: 0; padding: 0.25rem 0;
+      max-height: 220px;
+      overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+    .autocomplete-list li {
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      line-height: 1.3;
+    }
+    .autocomplete-list li:hover,
+    .autocomplete-list li.ac-active {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -154,7 +180,10 @@
         </div>
         <div class="field">
           <label for="city">Ville / Adresse</label>
-          <input id="city" type="text" maxlength="80">
+          <div class="autocomplete-wrap">
+            <input id="city" type="text" maxlength="120" autocomplete="off" placeholder="Commencez à taper…">
+            <ul class="autocomplete-list hidden" id="city-suggestions" role="listbox"></ul>
+          </div>
         </div>
         <div class="field">
           <label for="job">Profession</label>
@@ -367,6 +396,7 @@
       people.push(person);
       save(people);
       form.reset();
+      closeSuggestions();
       fields.firstName.focus();
       render();
     });
@@ -385,6 +415,80 @@
         save([]);
         render();
       }
+    });
+
+    // --- Autocomplétion adresse (API Adresse data.gouv.fr) ---
+    const cityInput = fields.city;
+    const suggestionsEl = document.getElementById("city-suggestions");
+    let acTimer = null;
+    let acIndex = -1;
+
+    function closeSuggestions() {
+      suggestionsEl.classList.add("hidden");
+      suggestionsEl.innerHTML = "";
+      acIndex = -1;
+    }
+
+    function setActive(items, index) {
+      items.forEach((li, i) => li.classList.toggle("ac-active", i === index));
+    }
+
+    function showSuggestions(labels) {
+      suggestionsEl.innerHTML = "";
+      if (!labels.length) { closeSuggestions(); return; }
+      labels.forEach((label) => {
+        const li = document.createElement("li");
+        li.textContent = label;
+        li.setAttribute("role", "option");
+        li.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          cityInput.value = label;
+          closeSuggestions();
+        });
+        suggestionsEl.appendChild(li);
+      });
+      suggestionsEl.classList.remove("hidden");
+      acIndex = -1;
+    }
+
+    cityInput.addEventListener("input", () => {
+      clearTimeout(acTimer);
+      const q = cityInput.value.trim();
+      if (q.length < 3) { closeSuggestions(); return; }
+      acTimer = setTimeout(async () => {
+        try {
+          const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=6`;
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const data = await res.json();
+          showSuggestions(data.features.map((f) => f.properties.label));
+        } catch { /* API indisponible : on laisse la saisie libre */ }
+      }, 300);
+    });
+
+    cityInput.addEventListener("keydown", (e) => {
+      const items = [...suggestionsEl.querySelectorAll("li")];
+      if (!items.length || suggestionsEl.classList.contains("hidden")) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        acIndex = (acIndex + 1) % items.length;
+        setActive(items, acIndex);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        acIndex = (acIndex - 1 + items.length) % items.length;
+        setActive(items, acIndex);
+      } else if (e.key === "Enter" && acIndex >= 0) {
+        e.preventDefault();
+        cityInput.value = items[acIndex].textContent;
+        closeSuggestions();
+      } else if (e.key === "Escape") {
+        closeSuggestions();
+      }
+    });
+
+    cityInput.addEventListener("blur", () => setTimeout(closeSuggestions, 150));
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".autocomplete-wrap")) closeSuggestions();
     });
 
     render();
