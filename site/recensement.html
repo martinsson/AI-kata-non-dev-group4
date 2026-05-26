@@ -55,6 +55,7 @@
       width: 100%;
     }
     input:focus, select:focus { border-color: var(--accent); }
+    input[readonly] { opacity: 0.6; cursor: default; }
     button {
       background: var(--accent);
       color: #0f172a;
@@ -167,11 +168,11 @@
         </div>
         <div class="field">
           <label for="dob">Date de naissance</label>
-          <input id="dob" type="date" max="">
+          <input id="dob" type="date" max="" required>
         </div>
         <div class="field">
           <label for="age">Âge</label>
-          <input id="age" type="number" min="0" max="130" required>
+          <input id="age" type="number" min="0" max="130" readonly>
         </div>
         <div class="field">
           <label for="civil">État civil</label>
@@ -512,7 +513,7 @@
         city: fields.city.value.trim(),
         job: fields.job.value.trim(),
       };
-      if (!person.firstName || !person.lastName || !person.age) return;
+      if (!person.firstName || !person.lastName || !person.dob) return;
 
       const people = load();
       people.push(person);
