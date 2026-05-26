@@ -45,6 +45,17 @@
       50% { transform: rotate(10deg); }
     }
     p { color: var(--muted); margin: 0 0 1.5rem; }
+    .row { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    input {
+      background: #0f172a;
+      color: var(--text);
+      border: 1px solid #334155;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); }
     button {
       background: var(--accent);
       color: #0f172a;
@@ -58,33 +69,110 @@
     }
     button:hover { filter: brightness(1.1); }
     button:active { transform: scale(0.96); }
+    button.ghost { background: transparent; color: var(--muted); padding: 0.4rem 0.8rem; font-weight: 400; font-size: 0.9rem; }
+    button.ghost:hover { color: var(--text); filter: none; }
     #greeting { margin-top: 1.25rem; font-size: 1.1rem; min-height: 1.5rem; color: var(--accent); }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <main class="card">
-    <h1>Hello, world! <span class="wave">👋</span></h1>
-    <p>Bienvenue sur votre première appli web.</p>
-    <button id="greet-btn">Dis bonjour</button>
-    <div id="greeting"></div>
+    <h1 id="title">Hello, world! <span class="wave">👋</span></h1>
+
+    <!-- Vue saisie du prénom -->
+    <section id="login-view">
+      <p>Entrez votre prénom pour commencer.</p>
+      <div class="row">
+        <input id="name-input" type="text" placeholder="Votre prénom" autocomplete="given-name" maxlength="40">
+        <button id="save-btn">Valider</button>
+      </div>
+    </section>
+
+    <!-- Vue utilisateur "connecté" -->
+    <section id="welcome-view" class="hidden">
+      <p>Bienvenue sur votre première appli web.</p>
+      <button id="greet-btn">Dis bonjour</button>
+      <div id="greeting"></div>
+      <div style="margin-top:1.25rem">
+        <button id="logout-btn" class="ghost">Changer de prénom</button>
+      </div>
+    </section>
   </main>
 
   <script>
-    const greetings = [
-      "Bonjour ! 🇫🇷",
-      "Hello! 🇬🇧",
-      "Hola! 🇪🇸",
-      "Ciao! 🇮🇹",
-      "Hallo! 🇩🇪",
-      "こんにちは! 🇯🇵",
-    ];
-    const btn = document.getElementById("greet-btn");
+    const STORAGE_KEY = "helloworld:firstName";
+
+    const title = document.getElementById("title");
+    const loginView = document.getElementById("login-view");
+    const welcomeView = document.getElementById("welcome-view");
+    const nameInput = document.getElementById("name-input");
+    const saveBtn = document.getElementById("save-btn");
+    const greetBtn = document.getElementById("greet-btn");
+    const logoutBtn = document.getElementById("logout-btn");
     const out = document.getElementById("greeting");
+
+    const greetings = [
+      (n) => `Bonjour, ${n} ! 🇫🇷`,
+      (n) => `Hello, ${n}! 🇬🇧`,
+      (n) => `Hola, ${n}! 🇪🇸`,
+      (n) => `Ciao, ${n}! 🇮🇹`,
+      (n) => `Hallo, ${n}! 🇩🇪`,
+      (n) => `こんにちは, ${n}! 🇯🇵`,
+    ];
+
+    let currentName = "";
     let i = 0;
-    btn.addEventListener("click", () => {
-      out.textContent = greetings[i % greetings.length];
+
+    function showWelcome(name) {
+      currentName = name;
+      title.innerHTML = `Bonjour, ${name} ! <span class="wave">👋</span>`;
+      loginView.classList.add("hidden");
+      welcomeView.classList.remove("hidden");
+      out.textContent = "";
+      i = 0;
+    }
+
+    function showLogin() {
+      currentName = "";
+      title.innerHTML = `Hello, world! <span class="wave">👋</span>`;
+      welcomeView.classList.add("hidden");
+      loginView.classList.remove("hidden");
+      nameInput.value = "";
+      nameInput.focus();
+    }
+
+    function saveName() {
+      const name = nameInput.value.trim();
+      if (!name) {
+        nameInput.focus();
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, name);
+      showWelcome(name);
+    }
+
+    saveBtn.addEventListener("click", saveName);
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") saveName();
+    });
+
+    greetBtn.addEventListener("click", () => {
+      out.textContent = greetings[i % greetings.length](currentName);
       i++;
     });
+
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      showLogin();
+    });
+
+    // Au chargement : restaure le prénom mémorisé s'il existe
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      showWelcome(stored);
+    } else {
+      nameInput.focus();
+    }
   </script>
 </body>
 </html>
