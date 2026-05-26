@@ -187,7 +187,7 @@
         </div>
         <div class="field">
           <label for="job">Profession</label>
-          <input id="job" type="text" maxlength="60">
+          <input id="job" type="text" maxlength="60" list="professions-list" autocomplete="off">
         </div>
         <div class="field">
           <button type="submit">Ajouter</button>
@@ -249,6 +249,80 @@
       <div class="empty hidden" id="empty-msg">Aucune personne recensée pour le moment.</div>
     </div>
   </div>
+
+  <datalist id="professions-list">
+    <!-- Santé -->
+    <option value="Médecin généraliste">
+    <option value="Médecin spécialiste">
+    <option value="Infirmier / Infirmière">
+    <option value="Pharmacien / Pharmacienne">
+    <option value="Dentiste">
+    <option value="Kinésithérapeute">
+    <option value="Psychologue">
+    <option value="Psychothérapeute">
+    <option value="Vétérinaire">
+    <option value="Aide-soignant / Aide-soignante">
+    <!-- Éducation -->
+    <option value="Enseignant / Enseignante">
+    <option value="Professeur / Professeure">
+    <option value="Éducateur / Éducatrice">
+    <option value="Assistant / Assistante social(e)">
+    <option value="Étudiant / Étudiante">
+    <!-- Ingénierie & technique -->
+    <option value="Ingénieur / Ingénieure">
+    <option value="Technicien / Technicienne">
+    <option value="Développeur / Développeuse informatique">
+    <option value="Architecte">
+    <option value="Électricien / Électricienne">
+    <option value="Plombier / Plombière">
+    <option value="Menuisier / Menuisière">
+    <option value="Maçon / Maçonne">
+    <option value="Mécanicien / Mécanicienne">
+    <!-- Gestion & finance -->
+    <option value="Comptable">
+    <option value="Analyste financier / Analyste financière">
+    <option value="Directeur / Directrice">
+    <option value="Chef de projet">
+    <option value="Consultant / Consultante">
+    <option value="Employé de banque">
+    <option value="Gestionnaire RH">
+    <option value="Manager">
+    <!-- Droit & administration -->
+    <option value="Avocat / Avocate">
+    <option value="Notaire">
+    <option value="Fonctionnaire">
+    <option value="Secrétaire">
+    <option value="Assistant administratif / Assistante administrative">
+    <!-- Commerce & services -->
+    <option value="Commercial / Commerciale">
+    <option value="Employé de commerce">
+    <option value="Vendeur / Vendeuse">
+    <option value="Agent immobilier / Agente immobilière">
+    <option value="Chauffeur / Chauffeuse">
+    <option value="Logisticien / Logisticienne">
+    <!-- Arts, médias & communication -->
+    <option value="Graphiste">
+    <option value="Designer">
+    <option value="Journaliste">
+    <option value="Photographe">
+    <option value="Traducteur / Traductrice">
+    <option value="Communicant / Communicante">
+    <!-- Artisanat & restauration -->
+    <option value="Cuisinier / Cuisinière">
+    <option value="Boulanger / Boulangère">
+    <option value="Coiffeur / Coiffeuse">
+    <option value="Serveur / Serveuse">
+    <option value="Agriculteur / Agricultrice">
+    <!-- Sécurité & défense -->
+    <option value="Policier / Policière">
+    <option value="Pompier / Pompière">
+    <option value="Agent de sécurité">
+    <option value="Militaire">
+    <!-- Autres -->
+    <option value="Retraité / Retraitée">
+    <option value="Sans emploi">
+    <option value="Indépendant / Indépendante">
+  </datalist>
 
   <script>
     const STORAGE_KEY = "recensement:people";
