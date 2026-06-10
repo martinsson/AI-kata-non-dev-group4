@@ -162,49 +162,23 @@
       "Avez-vous déjà vécu des épisodes similaires, ou est-ce la première fois ?"
     ];
 
-    // Praticiens indexés par profil
-    const praticiens = [
+    // Profils détectés par mots-clés → code spécialité Annuaire Santé
+    const profils = [
       {
-        titre: "Dr. Isabelle Renard — Psychiatre",
-        adresse: "12 rue des Acacias, Paris 17e",
-        telephone: "01 42 38 91 05",
-        disponibilite: "Lundi, mercredi, vendredi — sur rendez-vous",
-        description: "Médecin psychiatre avec 20 ans d'expérience. Spécialisée dans les troubles de l'humeur, la dépression sévère et les troubles bipolaires. Approche médicamenteuse et thérapeutique combinée.",
+        label: "Psychiatre",
+        specialite: "SM54",
+        profession: "10",  // Médecin
         mots_cles: ["dépression", "déprimé", "bipolaire", "psychose", "hallucination", "médicament", "traitement", "grave", "sévère", "suicide", "mourir", "crise", "hospitali"]
       },
       {
-        titre: "Thomas Lecomte — Psychologue clinicien",
-        adresse: "8 avenue Gambetta, Lyon 3e",
-        telephone: "04 78 52 14 67",
-        disponibilite: "Mardi au samedi — consultations en présentiel et en ligne",
-        description: "Psychologue clinicien spécialisé dans l'anxiété, les phobies, les traumatismes et le deuil. Accompagnement bienveillant sur le long terme.",
-        mots_cles: ["anxieux", "anxiété", "angoisse", "phobie", "trauma", "deuil", "peur", "stress", "émotions", "pleur", "triste", "insomnie", "cauchemar"]
-      },
-      {
-        titre: "Sophie Marchais — Psychothérapeute TCC",
-        adresse: "3 place Saint-Michel, Bordeaux",
-        telephone: "05 56 44 23 89",
-        disponibilite: "Lundi au jeudi — séances de 50 minutes",
-        description: "Thérapeute certifiée en Thérapies Cognitivo-Comportementales. Experte des TOC, des pensées obsessionnelles, des addictions et des comportements répétitifs.",
-        mots_cles: ["obsession", "toc", "répétition", "rituel", "addiction", "alcool", "drogue", "pensée", "négatif", "rumination", "comportement"]
-      },
-      {
-        titre: "Marc & Julie Fontaine — Thérapeutes de couple",
-        adresse: "27 rue de la Paix, Nantes",
-        telephone: "02 40 73 56 12",
-        disponibilite: "Mercredi et samedi — séances en duo ou en famille",
-        description: "Duo de thérapeutes spécialisés dans la médiation de couple et les conflits familiaux. Approche systémique et communication non-violente.",
-        mots_cles: ["couple", "mari", "femme", "relation", "famille", "enfant", "parent", "divorce", "séparation", "conflit", "communication"]
-      },
-      {
-        titre: "Dr. Karim Bensalem — Psychologue du travail",
-        adresse: "15 boulevard Haussmann, Paris 9e",
-        telephone: "01 53 27 84 30",
-        disponibilite: "Du lundi au vendredi — consultations express disponibles",
-        description: "Psychologue spécialisé en souffrance au travail. Prise en charge du burn-out, du harcèlement professionnel et de l'épuisement lié à la pression managériale.",
-        mots_cles: ["travail", "bureau", "boss", "collègue", "burn-out", "burnout", "harcèlement", "fatigue", "épuisement", "boulot", "licencié", "chômage"]
+        label: "Psychologue",
+        specialite: null,
+        profession: "93",  // Psychologue
+        mots_cles: ["anxieux", "anxiété", "angoisse", "phobie", "trauma", "deuil", "peur", "stress", "émotions", "pleur", "triste", "insomnie", "cauchemar", "obsession", "toc", "addiction", "rumination", "couple", "famille", "conflit", "travail", "burn-out", "burnout", "épuisement"]
       }
     ];
+
+    const CP_GRENOBLE = ["38000", "38100"];
 
     let step = 0;
     const reponses = [];
@@ -218,37 +192,126 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function addResult(praticien) {
+    function addResult(nom, specialite, adresse, telephone) {
       const chat = document.getElementById('chat');
       const b = document.createElement('div');
       b.className = 'bubble result';
       b.innerHTML = `
-        <strong>Notre recommandation</strong>
-        <p><b>${praticien.titre}</b></p>
-        <p>📍 ${praticien.adresse}</p>
-        <p>📞 ${praticien.telephone}</p>
-        <p>🗓 ${praticien.disponibilite}</p>
-        <p style="margin-top:8px;color:#a7f3d0">${praticien.description}</p>
+        <strong>Praticien recommandé à Grenoble</strong>
+        <p><b>${nom}</b></p>
+        <p>🏥 ${specialite}</p>
+        ${adresse ? `<p>📍 ${adresse}</p>` : ''}
+        ${telephone ? `<p>📞 ${telephone}</p>` : ''}
       `;
       chat.appendChild(b);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function analyser() {
-      const texte = reponses.join(' ').toLowerCase();
-      let meilleur = null;
-      let maxScore = -1;
+    function addResultsGroup(resultats, label) {
+      const chat = document.getElementById('chat');
+      const b = document.createElement('div');
+      b.className = 'bubble result';
+      let html = `<strong>Praticiens "${label}" à Grenoble</strong>`;
+      for (const r of resultats) {
+        html += `<hr style="border-color:#2d5a3d;margin:8px 0">
+          <p><b>${r.nom}</b></p>
+          ${r.specialite ? `<p>🏥 ${r.specialite}</p>` : ''}
+          ${r.adresse ? `<p>📍 ${r.adresse}</p>` : ''}
+          ${r.telephone ? `<p>📞 ${r.telephone}</p>` : ''}`;
+      }
+      b.innerHTML = html;
+      chat.appendChild(b);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
-      for (const p of praticiens) {
-        const score = p.mots_cles.filter(mot => texte.includes(mot)).length;
-        if (score > maxScore) {
-          maxScore = score;
-          meilleur = p;
-        }
+    function detecterProfil() {
+      const texte = reponses.join(' ').toLowerCase();
+      let meilleur = profils[1];
+      let maxScore = -1;
+      for (const p of profils) {
+        const score = p.mots_cles.filter(m => texte.includes(m)).length;
+        if (score > maxScore) { maxScore = score; meilleur = p; }
+      }
+      return meilleur;
+    }
+
+    function parseBundle(bundle) {
+      const entries = bundle.entry || [];
+      const practitioners = {};
+      const locations = {};
+      const roles = [];
+
+      for (const e of entries) {
+        const r = e.resource;
+        if (!r) continue;
+        if (r.resourceType === 'Practitioner') practitioners[r.id] = r;
+        if (r.resourceType === 'Location') locations[r.id] = r;
+        if (r.resourceType === 'PractitionerRole') roles.push(r);
       }
 
-      // Par défaut : psychologue clinicien
-      return meilleur || praticiens[1];
+      const resultats = [];
+      for (const role of roles) {
+        const pracRef = role.practitioner?.reference?.split('/')[1];
+        const prac = practitioners[pracRef];
+        if (!prac) continue;
+
+        const nameObj = prac.name?.[0];
+        const famille = nameObj?.family || '';
+        const prenom = (nameObj?.given || []).join(' ');
+        const prefix = (nameObj?.prefix || []).join(' ');
+        const nom = [prefix, prenom, famille].filter(Boolean).join(' ');
+
+        const specialite = role.specialty?.[0]?.coding?.[0]?.display || '';
+
+        let adresse = '';
+        const locRef = role.location?.[0]?.reference?.split('/')[1];
+        const loc = locations[locRef];
+        if (loc) {
+          const a = loc.address;
+          adresse = [a?.line?.join(', '), a?.postalCode, a?.city].filter(Boolean).join(', ');
+        } else {
+          const a = role.location?.[0];
+          if (!a) {
+            const pa = prac.address?.[0];
+            if (pa) adresse = [pa.line?.join(', '), pa.postalCode, pa.city].filter(Boolean).join(', ');
+          }
+        }
+
+        const telecom = prac.telecom?.find(t => t.system === 'phone');
+        const telephone = telecom?.value || '';
+
+        if (nom) resultats.push({ nom, specialite, adresse, telephone });
+      }
+      return resultats;
+    }
+
+    async function chercherPraticiens(profil) {
+      const cp = CP_GRENOBLE.join(',');
+      let url;
+
+      if (profil.specialite) {
+        url = `https://api.annuaire.sante.fr/fhir/v1/PractitionerRole?specialty=${profil.specialite}&location.address-postalcode=${CP_GRENOBLE[0]}&_include=PractitionerRole:practitioner&_include=PractitionerRole:location&_count=3`;
+      } else {
+        url = `https://api.annuaire.sante.fr/fhir/v1/PractitionerRole?role=${profil.profession}&location.address-postalcode=${CP_GRENOBLE[0]}&_include=PractitionerRole:practitioner&_include=PractitionerRole:location&_count=3`;
+      }
+
+      const resp = await fetch(url, { headers: { Accept: 'application/fhir+json' } });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const bundle = await resp.json();
+      return parseBundle(bundle);
+    }
+
+    async function orienter() {
+      const profil = detecterProfil();
+      addBubble("Merci pour ces informations. Je recherche des praticiens disponibles à Grenoble…", 'psyvago');
+
+      try {
+        const resultats = await chercherPraticiens(profil);
+        if (resultats.length === 0) throw new Error('Aucun résultat');
+        addResultsGroup(resultats, profil.label);
+      } catch (e) {
+        addBubble("Je n'ai pas pu contacter l'annuaire de santé. Voici une orientation générale : consultez le site annuaire.sante.fr en filtrant sur Grenoble (38000) et la spécialité \"" + profil.label + "\".", 'psyvago');
+      }
     }
 
     function send() {
@@ -266,17 +329,10 @@
           step++;
         }, 600);
       } else {
-        // Les 3 réponses sont collectées — on oriente
         document.getElementById('send-btn').disabled = true;
         input.disabled = true;
         input.placeholder = "Consultation terminée";
-
-        setTimeout(() => {
-          addBubble("Merci pour ces informations. En fonction de ce que vous m'avez partagé, voici le professionnel le plus adapté à votre situation :", 'psyvago');
-          setTimeout(() => {
-            addResult(analyser());
-          }, 800);
-        }, 700);
+        setTimeout(() => orienter(), 700);
       }
     }
 
