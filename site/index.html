@@ -1,4 +1,186 @@
 <!doctype html>
-<title>Hello</title>
-<h1>Hello, world!</h1>
-<p>Groupe 4</p>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PSYVAGO</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      text-align: center;
+      padding: 16px;
+      background: #16213e;
+      border-bottom: 1px solid #0f3460;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      letter-spacing: 4px;
+      color: #a78bfa;
+    }
+
+    header p {
+      font-size: 0.8rem;
+      color: #888;
+      letter-spacing: 2px;
+      margin-top: 2px;
+    }
+
+    #chat {
+      margin-top: 90px;
+      margin-bottom: 80px;
+      width: 100%;
+      max-width: 640px;
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .bubble.psyvago {
+      background: #2d2b55;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+      color: #d4b8ff;
+    }
+
+    .bubble.patient {
+      background: #0f3460;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+      color: #e0e0e0;
+    }
+
+    #input-area {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #16213e;
+      border-top: 1px solid #0f3460;
+      padding: 12px 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    #input-area input {
+      flex: 1;
+      max-width: 580px;
+      padding: 10px 16px;
+      border-radius: 24px;
+      border: 1px solid #0f3460;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    #input-area input:focus {
+      border-color: #a78bfa;
+    }
+
+    #input-area button {
+      padding: 10px 20px;
+      border-radius: 24px;
+      border: none;
+      background: #a78bfa;
+      color: #1a1a2e;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    #input-area button:hover {
+      background: #c4b5fd;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>PSYVAGO</h1>
+    <p>Votre espace d'écoute</p>
+  </header>
+
+  <div id="chat"></div>
+
+  <div id="input-area">
+    <input id="msg" type="text" placeholder="Exprimez-vous librement…" autocomplete="off" />
+    <button onclick="send()">Envoyer</button>
+  </div>
+
+  <script>
+    const questions = [
+      "Bonjour, je suis PSYVAGO. Je suis là pour vous écouter, sans jugement. Pouvez-vous me dire ce qui vous amène aujourd'hui ?",
+      "Depuis quand ressentez-vous cela ?",
+      "Est-ce que cela affecte votre quotidien — votre sommeil, votre travail, vos relations ?",
+      "Y a-t-il eu un événement particulier qui a déclenché ce que vous ressentez ?",
+      "Comment vous sentez-vous dans votre corps quand ces pensées arrivent ?",
+      "Avez-vous quelqu'un à qui en parler dans votre entourage ?",
+      "Qu'est-ce qui vous aiderait le plus en ce moment, selon vous ?",
+      "Merci de m'avoir confié tout cela. Prenez soin de vous. N'hésitez pas à revenir quand vous en avez besoin."
+    ];
+
+    let step = 0;
+
+    function addBubble(text, who) {
+      const chat = document.getElementById('chat');
+      const b = document.createElement('div');
+      b.className = 'bubble ' + who;
+      b.textContent = text;
+      chat.appendChild(b);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function send() {
+      const input = document.getElementById('msg');
+      const text = input.value.trim();
+      if (!text) return;
+      addBubble(text, 'patient');
+      input.value = '';
+      setTimeout(() => {
+        if (step < questions.length) {
+          addBubble(questions[step], 'psyvago');
+          step++;
+        }
+      }, 600);
+    }
+
+    document.getElementById('msg').addEventListener('keydown', e => {
+      if (e.key === 'Enter') send();
+    });
+
+    // Message d'accueil
+    setTimeout(() => {
+      addBubble(questions[step], 'psyvago');
+      step++;
+    }, 400);
+  </script>
+
+</body>
+</html>
