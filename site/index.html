@@ -237,22 +237,46 @@
 
 
 async function chercherPraticiens(profil) {
-      const dataset = 'annuaire-des-professionnels-de-sante';
+      // Psychiatres → dataset "medecins" (Assurance Maladie, médecins libéraux)
+      // Psychologues → dataset "annuaire-des-professionnels-de-sante" (tous professions)
+      const dataset = profil.label === 'Psychiatre'
+        ? 'medecins'
+        : 'annuaire-des-professionnels-de-sante';
       const base = `https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/${dataset}/records`;
-      const cp = CP_GRENOBLE.map(c => `cp_lib="${c}"`).join(' OR ');
-      const where = encodeURIComponent(`(${cp}) AND profession_lib="${profil.label}"`);
+
+      const cpField = profil.label === 'Psychiatre' ? 'cp_cabinet' : 'cp_lib';
+      const cpFilter = CP_GRENOBLE.map(c => `${cpField}="${c}"`).join(' OR ');
+      const profField = profil.label === 'Psychiatre' ? 'libelle_profession' : 'profession_lib';
+      const where = encodeURIComponent(`(${cpFilter}) AND ${profField}="${profil.label}"`);
       const url = `${base}?where=${where}&limit=3`;
 
       const resp = await fetch(url);
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const data = await resp.json();
 
-      return (data.results || []).map(r => ({
-        nom: [r.civilite_lib, r.prenom_lib, r.nom_lib].filter(Boolean).join(' '),
-        specialite: r.profession_lib || profil.label,
-        adresse: [r.adr_voie_lib, r.cp_lib, r.com_lib].filter(Boolean).join(', '),
-        telephone: r.tel_lib || ''
-      })).filter(r => r.nom);
+      // Log console pour vérifier les vrais noms de champs (F12 dans le navigateur)
+      if (data.results?.[0]) {
+        console.log('[PSYVAGO] champs reçus :', Object.keys(data.results[0]));
+        console.log('[PSYVAGO] premier résultat :', data.results[0]);
+      }
+
+      return (data.results || []).map(r => {
+        if (profil.label === 'Psychiatre') {
+          return {
+            nom: [r.civilite, r.prenom_exercice, r.nom_exercice].filter(Boolean).join(' '),
+            specialite: r.libelle_savoir_faire || r.libelle_profession || profil.label,
+            adresse: [r.adresse_cabinet, r.cp_cabinet, r.libelle_commune].filter(Boolean).join(', '),
+            telephone: r.telephone || ''
+          };
+        } else {
+          return {
+            nom: [r.civilite_lib, r.prenom_lib, r.nom_lib].filter(Boolean).join(' '),
+            specialite: r.profession_lib || profil.label,
+            adresse: [r.adr_voie_lib, r.cp_lib, r.com_lib].filter(Boolean).join(', '),
+            telephone: r.tel_lib || ''
+          };
+        }
+      }).filter(r => r.nom);
     }
 
     async function orienter() {
