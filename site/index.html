@@ -235,70 +235,24 @@
       return meilleur;
     }
 
-    function parseBundle(bundle) {
-      const entries = bundle.entry || [];
-      const practitioners = {};
-      const locations = {};
-      const roles = [];
 
-      for (const e of entries) {
-        const r = e.resource;
-        if (!r) continue;
-        if (r.resourceType === 'Practitioner') practitioners[r.id] = r;
-        if (r.resourceType === 'Location') locations[r.id] = r;
-        if (r.resourceType === 'PractitionerRole') roles.push(r);
-      }
+async function chercherPraticiens(profil) {
+      const dataset = 'annuaire-des-professionnels-de-sante';
+      const base = `https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/${dataset}/records`;
+      const cp = CP_GRENOBLE.map(c => `cp_lib="${c}"`).join(' OR ');
+      const where = encodeURIComponent(`(${cp}) AND profession_lib="${profil.label}"`);
+      const url = `${base}?where=${where}&limit=3`;
 
-      const resultats = [];
-      for (const role of roles) {
-        const pracRef = role.practitioner?.reference?.split('/')[1];
-        const prac = practitioners[pracRef];
-        if (!prac) continue;
-
-        const nameObj = prac.name?.[0];
-        const famille = nameObj?.family || '';
-        const prenom = (nameObj?.given || []).join(' ');
-        const prefix = (nameObj?.prefix || []).join(' ');
-        const nom = [prefix, prenom, famille].filter(Boolean).join(' ');
-
-        const specialite = role.specialty?.[0]?.coding?.[0]?.display || '';
-
-        let adresse = '';
-        const locRef = role.location?.[0]?.reference?.split('/')[1];
-        const loc = locations[locRef];
-        if (loc) {
-          const a = loc.address;
-          adresse = [a?.line?.join(', '), a?.postalCode, a?.city].filter(Boolean).join(', ');
-        } else {
-          const a = role.location?.[0];
-          if (!a) {
-            const pa = prac.address?.[0];
-            if (pa) adresse = [pa.line?.join(', '), pa.postalCode, pa.city].filter(Boolean).join(', ');
-          }
-        }
-
-        const telecom = prac.telecom?.find(t => t.system === 'phone');
-        const telephone = telecom?.value || '';
-
-        if (nom) resultats.push({ nom, specialite, adresse, telephone });
-      }
-      return resultats;
-    }
-
-    async function chercherPraticiens(profil) {
-      const cp = CP_GRENOBLE.join(',');
-      let url;
-
-      if (profil.specialite) {
-        url = `https://api.annuaire.sante.fr/fhir/v1/PractitionerRole?specialty=${profil.specialite}&location.address-postalcode=${CP_GRENOBLE[0]}&_include=PractitionerRole:practitioner&_include=PractitionerRole:location&_count=3`;
-      } else {
-        url = `https://api.annuaire.sante.fr/fhir/v1/PractitionerRole?role=${profil.profession}&location.address-postalcode=${CP_GRENOBLE[0]}&_include=PractitionerRole:practitioner&_include=PractitionerRole:location&_count=3`;
-      }
-
-      const resp = await fetch(url, { headers: { Accept: 'application/fhir+json' } });
+      const resp = await fetch(url);
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const bundle = await resp.json();
-      return parseBundle(bundle);
+      const data = await resp.json();
+
+      return (data.results || []).map(r => ({
+        nom: [r.civilite_lib, r.prenom_lib, r.nom_lib].filter(Boolean).join(' '),
+        specialite: r.profession_lib || profil.label,
+        adresse: [r.adr_voie_lib, r.cp_lib, r.com_lib].filter(Boolean).join(', '),
+        telephone: r.tel_lib || ''
+      })).filter(r => r.nom);
     }
 
     async function orienter() {
