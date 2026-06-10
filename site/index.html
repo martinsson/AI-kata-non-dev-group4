@@ -76,6 +76,28 @@
       color: #e0e0e0;
     }
 
+    .bubble.result {
+      background: #1b3a2d;
+      border: 1px solid #34d399;
+      border-radius: 16px;
+      align-self: flex-start;
+      color: #a7f3d0;
+      max-width: 90%;
+    }
+
+    .bubble.result strong {
+      color: #34d399;
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1rem;
+    }
+
+    .bubble.result p {
+      margin-top: 4px;
+      font-size: 0.9rem;
+      color: #d1fae5;
+    }
+
     #input-area {
       position: fixed;
       bottom: 0;
@@ -115,9 +137,8 @@
       font-size: 0.95rem;
     }
 
-    #input-area button:hover {
-      background: #c4b5fd;
-    }
+    #input-area button:hover { background: #c4b5fd; }
+    #input-area button:disabled { background: #555; cursor: default; }
   </style>
 </head>
 <body>
@@ -131,22 +152,47 @@
 
   <div id="input-area">
     <input id="msg" type="text" placeholder="Exprimez-vous librement…" autocomplete="off" />
-    <button onclick="send()">Envoyer</button>
+    <button id="send-btn" onclick="send()">Envoyer</button>
   </div>
 
   <script>
     const questions = [
-      "Bonjour, je suis PSYVAGO. Je suis là pour vous écouter, sans jugement. Pouvez-vous me dire ce qui vous amène aujourd'hui ?",
-      "Depuis quand ressentez-vous cela ?",
-      "Est-ce que cela affecte votre quotidien — votre sommeil, votre travail, vos relations ?",
-      "Y a-t-il eu un événement particulier qui a déclenché ce que vous ressentez ?",
-      "Comment vous sentez-vous dans votre corps quand ces pensées arrivent ?",
-      "Avez-vous quelqu'un à qui en parler dans votre entourage ?",
-      "Qu'est-ce qui vous aiderait le plus en ce moment, selon vous ?",
-      "Merci de m'avoir confié tout cela. Prenez soin de vous. N'hésitez pas à revenir quand vous en avez besoin."
+      "Bonjour, je suis PSYVAGO. Je suis là pour vous écouter sans jugement. Quel est le problème principal qui vous préoccupe en ce moment ?",
+      "Est-ce que cela impacte votre quotidien — sommeil, travail, relations — et depuis combien de temps ?",
+      "Avez-vous déjà vécu des épisodes similaires, ou est-ce la première fois ?"
+    ];
+
+    // Praticiens indexés par profil
+    const praticiens = [
+      {
+        titre: "Psychiatre",
+        description: "Médecin spécialiste pouvant prescrire des médicaments. Indiqué pour les troubles sévères : dépression profonde, troubles bipolaires, schizophrénie, troubles anxieux graves.",
+        mots_cles: ["dépression", "déprimé", "bipolaire", "psychose", "hallucination", "médicament", "traitement", "grave", "sévère", "suicide", "mourir", "crise", "hospitali"]
+      },
+      {
+        titre: "Psychologue clinicien",
+        description: "Spécialiste du diagnostic et du suivi psychologique. Indiqué pour l'anxiété, les phobies, les traumatismes, le deuil, les difficultés émotionnelles durables.",
+        mots_cles: ["anxieux", "anxiété", "angoisse", "phobie", "trauma", "deuil", "peur", "stress", "émotions", "pleur", "triste", "insomnie", "cauchemar"]
+      },
+      {
+        titre: "Psychothérapeute (TCC)",
+        description: "Thérapeute en Thérapies Cognitivo-Comportementales. Idéal pour les troubles obsessionnels, les comportements répétitifs, les addictions légères et les pensées négatives récurrentes.",
+        mots_cles: ["obsession", "toc", "répétition", "rituel", "addiction", "alcool", "drogue", "pensée", "négatif", "rumination", "comportement"]
+      },
+      {
+        titre: "Thérapeute de couple ou familial",
+        description: "Spécialisé dans les conflits relationnels. Recommandé pour les problèmes de couple, les tensions familiales, les difficultés de communication.",
+        mots_cles: ["couple", "mari", "femme", "relation", "famille", "enfant", "parent", "divorce", "séparation", "conflit", "communication"]
+      },
+      {
+        titre: "Psychologue du travail",
+        description: "Expert du bien-être en milieu professionnel. Conseillé en cas de burn-out, harcèlement, pression professionnelle, perte de sens au travail.",
+        mots_cles: ["travail", "bureau", "boss", "collègue", "burn-out", "burnout", "harcèlement", "fatigue", "épuisement", "boulot", "licencié", "chômage"]
+      }
     ];
 
     let step = 0;
+    const reponses = [];
 
     function addBubble(text, who) {
       const chat = document.getElementById('chat');
@@ -157,25 +203,65 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    function addResult(praticien) {
+      const chat = document.getElementById('chat');
+      const b = document.createElement('div');
+      b.className = 'bubble result';
+      b.innerHTML = `<strong>Notre recommandation : ${praticien.titre}</strong><p>${praticien.description}</p>`;
+      chat.appendChild(b);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function analyser() {
+      const texte = reponses.join(' ').toLowerCase();
+      let meilleur = null;
+      let maxScore = -1;
+
+      for (const p of praticiens) {
+        const score = p.mots_cles.filter(mot => texte.includes(mot)).length;
+        if (score > maxScore) {
+          maxScore = score;
+          meilleur = p;
+        }
+      }
+
+      // Par défaut : psychologue clinicien
+      return meilleur || praticiens[1];
+    }
+
     function send() {
       const input = document.getElementById('msg');
       const text = input.value.trim();
       if (!text) return;
+
       addBubble(text, 'patient');
+      reponses.push(text);
       input.value = '';
-      setTimeout(() => {
-        if (step < questions.length) {
+
+      if (step < questions.length) {
+        setTimeout(() => {
           addBubble(questions[step], 'psyvago');
           step++;
-        }
-      }, 600);
+        }, 600);
+      } else {
+        // Les 3 réponses sont collectées — on oriente
+        document.getElementById('send-btn').disabled = true;
+        input.disabled = true;
+        input.placeholder = "Consultation terminée";
+
+        setTimeout(() => {
+          addBubble("Merci pour ces informations. En fonction de ce que vous m'avez partagé, voici le professionnel le plus adapté à votre situation :", 'psyvago');
+          setTimeout(() => {
+            addResult(analyser());
+          }, 800);
+        }, 700);
+      }
     }
 
     document.getElementById('msg').addEventListener('keydown', e => {
       if (e.key === 'Enter') send();
     });
 
-    // Message d'accueil
     setTimeout(() => {
       addBubble(questions[step], 'psyvago');
       step++;
