@@ -252,41 +252,73 @@
     }).join("");
   }
 
-  // --- Form -------------------------------------------------------------
-  function initForm() {
-    const sel = el("evCategory");
-    sel.innerHTML = CATEGORIES.map(c => `<option>${c}</option>`).join("");
-    el("evDate").value = new Date().toISOString().slice(0, 10);
+  // --- Forms ------------------------------------------------------------
+  // Binds an event-entry form. `p` is the id prefix for the form's fields
+  // ("ev" for the inline form, "q" for the quick-add modal).
+  function bindEventForm(formId, p, previewId, onDone) {
+    el(p + "Category").innerHTML = CATEGORIES.map(c => `<option>${c}</option>`).join("");
+    resetForm(p);
 
     const preview = () => {
-      const sev = +el("evSeverity").value, rating = +el("evRating").value;
+      const sev = +el(p + "Severity").value, rating = +el(p + "Rating").value;
       const d = (rating - 3) * sev;
-      el("impactPreview").innerHTML = d === 0
+      el(previewId).innerHTML = d === 0
         ? `This event would be <b>neutral</b> (adequate handling holds the level steady).`
         : `This event would <b>${d > 0 ? "promote" : "demote"}</b> the team by <b>${Math.abs(d)} point${Math.abs(d) === 1 ? "" : "s"}</b>.`;
     };
-    el("evSeverity").addEventListener("change", preview);
-    el("evRating").addEventListener("change", preview);
+    el(p + "Severity").addEventListener("change", preview);
+    el(p + "Rating").addEventListener("change", preview);
     preview();
 
-    el("eventForm").addEventListener("submit", e => {
+    el(formId).addEventListener("submit", e => {
       e.preventDefault();
       events.push({
         id: Date.now(),
-        title: el("evTitle").value.trim(),
-        date: el("evDate").value,
-        category: el("evCategory").value,
-        severity: +el("evSeverity").value,
-        rating: +el("evRating").value,
-        notes: el("evNotes").value.trim(),
+        title: el(p + "Title").value.trim(),
+        date: el(p + "Date").value,
+        category: el(p + "Category").value,
+        severity: +el(p + "Severity").value,
+        rating: +el(p + "Rating").value,
+        notes: el(p + "Notes").value.trim(),
       });
       save();
-      e.target.reset();
-      el("evDate").value = new Date().toISOString().slice(0, 10);
+      resetForm(p);
       preview();
       render();
-      switchView("dashboard");
+      if (onDone) onDone();
     });
+
+    return preview;
+  }
+
+  function resetForm(p) {
+    el(p + "Title").value = "";
+    el(p + "Notes").value = "";
+    el(p + "Severity").value = "4";
+    el(p + "Rating").value = "3";
+    el(p + "Date").value = new Date().toISOString().slice(0, 10);
+  }
+
+  function initForms() {
+    bindEventForm("eventForm", "ev", "impactPreview", () => switchView("dashboard"));
+
+    // Quick-add modal ("prompt window").
+    const modal = el("modal");
+    bindEventForm("quickForm", "q", "qImpactPreview", closeModal);
+
+    function openModal() {
+      resetForm("q");
+      el("qImpactPreview").innerHTML = "";
+      modal.hidden = false;
+      el("qTitle").focus();
+    }
+    function closeModal() { modal.hidden = true; }
+
+    el("quickAddBtn").addEventListener("click", openModal);
+    el("modalClose").addEventListener("click", closeModal);
+    el("modalCancel").addEventListener("click", closeModal);
+    modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
   }
 
   // --- Events table actions --------------------------------------------
@@ -342,6 +374,6 @@
   }
 
   // --- Boot -------------------------------------------------------------
-  initForm();
+  initForms();
   render();
 })();
