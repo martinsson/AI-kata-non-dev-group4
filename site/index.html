@@ -1,3 +1,153 @@
 <!doctype html>
-<title>Hello</title>
-<h1>Hello, world!</h1>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team Maturity Compass — R&D Leadership</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◎</span>
+      <div>
+        <h1>Team Maturity Compass</h1>
+        <p class="sub">R&amp;D leadership — from low performing to high performing</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="log">Log an event</button>
+      <button class="tab" data-view="history">History</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="view active">
+      <div class="grid">
+        <div class="card level-card">
+          <div class="level-head">
+            <span class="eyebrow">Current maturity level</span>
+            <h2 id="levelName">—</h2>
+            <p id="levelTagline" class="tagline">—</p>
+          </div>
+          <div class="gauge">
+            <div class="gauge-track">
+              <div id="gaugeFill" class="gauge-fill"></div>
+              <div id="gaugeMarker" class="gauge-marker"></div>
+            </div>
+            <div class="gauge-scale">
+              <span>Low performing</span>
+              <span>High performing</span>
+            </div>
+          </div>
+          <div class="score-row">
+            <div><span class="big" id="scoreValue">—</span><span class="muted">/100</span></div>
+            <div id="momentum" class="momentum">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">Maturity trend over time</span>
+          <div id="trendChart" class="chart"></div>
+          <p class="muted small" id="trendCaption">Log events to build the trend.</p>
+        </div>
+
+        <div class="card span-2">
+          <span class="eyebrow">Analysis &amp; recommendation</span>
+          <div id="analysis" class="analysis"></div>
+        </div>
+
+        <div class="card span-2">
+          <span class="eyebrow">Capability by area (avg handling quality)</span>
+          <div id="categoryBars" class="catbars"></div>
+        </div>
+
+        <div class="card span-2 ladder-card">
+          <span class="eyebrow">The maturity ladder</span>
+          <div id="ladder" class="ladder"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOG EVENT -->
+    <section id="log" class="view">
+      <div class="card form-card">
+        <span class="eyebrow">Record a team event</span>
+        <p class="muted">Capture a situation the team faced and rate how well they handled it. Well-handled, high-impact events promote the team; poorly-handled ones demote it.</p>
+        <form id="eventForm">
+          <div class="field">
+            <label for="evTitle">What happened?</label>
+            <input id="evTitle" type="text" required placeholder="e.g. Critical prod incident during a release freeze" />
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="evDate">Date</label>
+              <input id="evDate" type="date" required />
+            </div>
+            <div class="field">
+              <label for="evCategory">Capability area</label>
+              <select id="evCategory"></select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="evSeverity">Stakes / impact</label>
+              <select id="evSeverity">
+                <option value="2">Low — routine, contained</option>
+                <option value="4" selected>Medium — meaningful</option>
+                <option value="6">High — business-critical</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="evRating">How well did the team handle it?</label>
+              <select id="evRating">
+                <option value="1">1 — Poorly (avoided, blamed, broke down)</option>
+                <option value="2">2 — Below par</option>
+                <option value="3" selected>3 — Adequate</option>
+                <option value="4">4 — Well</option>
+                <option value="5">5 — Excellently (owned, learned, grew)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="evNotes">Notes (optional)</label>
+            <textarea id="evNotes" rows="2" placeholder="Context, who was involved, what the team did…"></textarea>
+          </div>
+          <div class="impact-preview" id="impactPreview"></div>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Rate event &amp; update level</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="history" class="view">
+      <div class="card">
+        <div class="history-head">
+          <span class="eyebrow">Event history</span>
+          <div class="history-tools">
+            <button id="seedBtn" class="btn ghost">Load sample data</button>
+            <button id="resetBtn" class="btn ghost danger">Reset all</button>
+          </div>
+        </div>
+        <table class="events-table">
+          <thead>
+            <tr><th>Date</th><th>Event</th><th>Area</th><th>Stakes</th><th>Handling</th><th>Impact</th><th></th></tr>
+          </thead>
+          <tbody id="eventRows"></tbody>
+        </table>
+        <p id="emptyHistory" class="muted empty">No events yet — log one or load sample data.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Data is stored locally in your browser. Nothing leaves this device.</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
