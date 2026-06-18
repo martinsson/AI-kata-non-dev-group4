@@ -184,19 +184,14 @@
     else items.push(insight("warn", "➡️", "Plateau",
       `The team is holding steady. Deliberately take on a stretch challenge to break out of the plateau.`));
 
-    // 3. Weakest capability area → targeted recommendation.
+    // 3. Capability spread → strongest, plus focus areas for the
+    //    recommendations block below.
     const stats = categoryStats(sorted);
-    let weakest = null, strongest = null;
-    for (const [cat, s] of Object.entries(stats)) {
-      const avg = s.sum / s.n;
-      if (!weakest || avg < weakest.avg) weakest = { cat, avg };
-      if (!strongest || avg > strongest.avg) strongest = { cat, avg };
-    }
-    if (weakest) items.push(insight(weakest.avg < 3 ? "bad" : "warn", "🎯", `Focus area: ${weakest.cat}`,
-      recBody(weakest.cat, `Average handling here is <b>${weakest.avg.toFixed(1)}/5</b> — the team's weakest area.`)));
-    if (strongest && strongest.avg >= 4 && strongest.cat !== (weakest && weakest.cat))
-      items.push(insight("good", "💪", `Strength: ${strongest.cat}`,
-        `Handling averages <b>${strongest.avg.toFixed(1)}/5</b>. Codify what's working: have the relevant chapter capture it as a standard and share it through a guild/league so other squads inherit the practice.`));
+    const ranked = Object.entries(stats)
+      .map(([cat, s]) => ({ cat, avg: s.sum / s.n }))
+      .sort((a, b) => a.avg - b.avg);
+    const strongest = ranked[ranked.length - 1];
+    const weakest = ranked[0];
 
     // 4. High-stakes handling.
     const high = sorted.filter(e => e.severity === 6);
@@ -206,7 +201,45 @@
         `Across <b>${high.length}</b> high-stakes event${high.length === 1 ? "" : "s"}, handling averaged <b>${avgHigh.toFixed(1)}/5</b>. ${avgHigh >= 3.5 ? "The team rises to the moment — a hallmark of high-performing teams." : "Pressure is exposing gaps; debrief these calmly to build resilience."}`));
     }
 
-    host.innerHTML = items.join("");
+    if (strongest && strongest.avg >= 4 && (!weakest || strongest.cat !== weakest.cat))
+      items.push(insight("good", "💪", `Strength: ${strongest.cat}`,
+        `Handling averages <b>${strongest.avg.toFixed(1)}/5</b>. Codify it: have the relevant chapter capture the practice as a standard and share it through a guild/league so other squads inherit it.`));
+
+    // Focus areas = the weakest area, plus a second if it's also a concern.
+    const focus = ranked.filter((r, i) => i === 0 || r.avg < 3.5).slice(0, 2);
+
+    host.innerHTML = items.join("") + renderRecsSplit(focus);
+  }
+
+  // Dedicated, prominent recommendations block. Each focus area renders its
+  // guidance in TWO clearly separated columns: one for the leadership team,
+  // one for the team's leader.
+  function renderRecsSplit(focus) {
+    if (!focus.length) return "";
+    const list = items => `<ul class="rec-actions">${items.map(a => `<li>${a}</li>`).join("")}</ul>`;
+    const blocks = focus.map(({ cat, avg }) => {
+      const r = RECS[cat];
+      if (!r) return "";
+      return `<div class="rec-block">
+        <div class="rec-block-head">🎯 <b>${cat}</b> <span class="muted small">— avg handling ${avg.toFixed(1)}/5</span></div>
+        <p class="why">${r.why}</p>
+        <div class="recs-split">
+          <div class="rec-col team-col">
+            <span class="rec-label">🧭 For the R&amp;D leadership team</span>
+            ${list(r.team)}
+          </div>
+          <div class="rec-col leader-col">
+            <span class="rec-label">👤 For the team's leader</span>
+            ${list(r.leader)}
+          </div>
+        </div>
+        <p class="watch"><b>Signal to watch:</b> ${r.watch}</p>
+      </div>`;
+    }).join("");
+    return `<div class="recs-section">
+      <div class="recs-heading">Recommended actions</div>
+      ${blocks}
+    </div>`;
   }
 
   // Each area carries two recommendation tracks:
@@ -341,20 +374,6 @@
 
   function insight(kind, ic, title, body) {
     return `<div class="insight ${kind}"><span class="ic">${ic}</span><div><h4>${title}</h4><p>${body}</p></div></div>`;
-  }
-
-  // Renders a rich, two-track recommendation for a capability area:
-  // one block for the leadership team, one for the team's leader.
-  function recBody(cat, lead) {
-    const r = RECS[cat];
-    if (!r) return `${lead} Make this an explicit team goal for the next PI.`;
-    const track = (label, icon, items) =>
-      `<div class="rec-track"><span class="rec-label">${icon} ${label}</span>`
-      + `<ul class="rec-actions">${items.map(a => `<li>${a}</li>`).join("")}</ul></div>`;
-    return `${lead}<p class="why">${r.why}</p>`
-      + track("For the R&amp;D leadership team", "🧭", r.team)
-      + track("For the team's leader", "👤", r.leader)
-      + `<p class="watch"><b>Signal to watch:</b> ${r.watch}</p>`;
   }
 
   function renderLadder(score) {

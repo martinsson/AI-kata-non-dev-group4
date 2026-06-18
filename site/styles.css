@@ -122,19 +122,36 @@ main { max-width: 1120px; margin: 0 auto; padding: 26px 20px 60px; }
 
 /* Rich recommendation layout */
 .insight .why { margin: 8px 0 4px; font-size: 13px; color: var(--ink); opacity: .85; }
-.rec-track {
-  margin: 10px 0 4px; padding: 10px 12px; border-radius: 8px;
-  background: rgba(255,255,255,.03); border: 1px solid var(--line);
+
+/* Dedicated recommendations section with team / leader split */
+.recs-section { margin-top: 16px; }
+.recs-heading {
+  font-size: 13px; font-weight: 800; letter-spacing: .04em; color: var(--ink);
+  padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--line);
 }
+.rec-block {
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 16px; margin-bottom: 14px;
+}
+.rec-block-head { font-size: 15px; margin-bottom: 6px; }
+.rec-block .why { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+.recs-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px){ .recs-split { grid-template-columns: 1fr; } }
+.rec-col {
+  border-radius: 10px; padding: 12px 14px;
+  background: var(--panel); border: 1px solid var(--line);
+}
+.team-col { border-top: 3px solid var(--accent); }
+.leader-col { border-top: 3px solid var(--accent-2); }
 .rec-label {
-  display: block; font-size: 11px; font-weight: 800; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--ink); margin-bottom: 6px;
+  display: block; font-size: 12px; font-weight: 800; letter-spacing: .04em;
+  color: var(--ink); margin-bottom: 8px;
 }
-.rec-actions { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
-.rec-actions li { font-size: 13px; color: var(--muted); }
+.rec-actions { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 7px; }
+.rec-actions li { font-size: 13px; color: var(--muted); line-height: 1.45; }
 .rec-actions li b { color: var(--ink); }
-.insight .watch { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); font-style: italic; }
-.insight .watch b { font-style: normal; color: var(--ink); }
+.rec-block .watch { margin: 12px 0 0; font-size: 12.5px; color: var(--muted); font-style: italic; }
+.rec-block .watch b { font-style: normal; color: var(--ink); }
 
 /* Category bars */
 .catbars { display: flex; flex-direction: column; gap: 12px; }
