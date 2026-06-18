@@ -168,9 +168,11 @@
       return;
     }
 
-    // 1. Where the team sits + what it takes to level up.
+    // 1. Where the team sits + what it takes to level up (framed in the
+    //    team's Spotify-model + SAFe operating model).
     items.push(insight("info", "📍", `You are at ${level.name}`,
-      `${level.tag} <b>To progress:</b> ${level.need}`));
+      `${level.tag} <b>To progress:</b> ${level.need}`
+      + `<p class="why"><b>In your operating model:</b> ${LEVEL_ORG[levelIndex(level)]}</p>`));
 
     // 2. Momentum / trajectory.
     const recent = sorted.slice(-3);
@@ -191,10 +193,10 @@
       if (!strongest || avg > strongest.avg) strongest = { cat, avg };
     }
     if (weakest) items.push(insight(weakest.avg < 3 ? "bad" : "warn", "🎯", `Focus area: ${weakest.cat}`,
-      `Average handling here is <b>${weakest.avg.toFixed(1)}/5</b> — the team's weakest area. ${RECS[weakest.cat] || "Make this an explicit team goal for the next quarter."}`));
+      recBody(weakest.cat, `Average handling here is <b>${weakest.avg.toFixed(1)}/5</b> — the team's weakest area.`)));
     if (strongest && strongest.avg >= 4 && strongest.cat !== (weakest && weakest.cat))
       items.push(insight("good", "💪", `Strength: ${strongest.cat}`,
-        `Handling averages <b>${strongest.avg.toFixed(1)}/5</b>. Use this strength to lift weaker areas — have the team teach how they do it.`));
+        `Handling averages <b>${strongest.avg.toFixed(1)}/5</b>. Codify what's working: have the relevant chapter capture it as a standard and share it through a guild/league so other squads inherit the practice.`));
 
     // 4. High-stakes handling.
     const high = sorted.filter(e => e.severity === 6);
@@ -207,19 +209,152 @@
     host.innerHTML = items.join("");
   }
 
+  // Each area carries two recommendation tracks:
+  //  team   → collective actions/rituals for the R&D leadership team
+  //  leader → what the individual leading that team should personally do
   const RECS = {
-    "Conflict & trust": "Invest in psychological safety — make disagreement safe and normal. Try a team charter and regular 1:1s.",
-    "Decision making": "Clarify decision rights (who decides what) and use lightweight frameworks like DACI to avoid stalls.",
-    "Delivery & execution": "Tighten planning and WIP limits; review what made commitments slip and protect focus time.",
-    "Innovation & risk-taking": "Create slack for experiments and celebrate intelligent failures, not just successes.",
-    "Communication & transparency": "Make work and decisions visible by default; over-communicate context and the 'why'.",
-    "Accountability & ownership": "Agree on clear ownership and definitions of done; follow through on commitments publicly.",
-    "Crisis response": "Run blameless post-incident reviews and rehearse playbooks so the team responds calmly under pressure.",
-    "Feedback & learning": "Build a regular retro and feedback habit; turn lessons into concrete, tracked actions.",
+    "Conflict & trust": {
+      why: "Trust is the foundation of autonomous squads. Where it's thin, chapters fragment and cross-squad dependencies turn political.",
+      team: [
+        "Agree a team charter &amp; working agreement; revisit it at every PI boundary.",
+        "Practise \"disagree &amp; commit\" openly in ART Sync / Scrum-of-Scrums so squads don't carry silent conflict into PI Planning.",
+        "Hold each other to the charter peer-to-peer — don't route every norm breach through the leader.",
+      ],
+      leader: [
+        "Model vulnerability and name your own mistakes first — psychological safety starts at the top.",
+        "Coach members through friction in 1:1s; tackle chronic distrust directly instead of hoping it fades.",
+        "Protect dissent: make sure quieter chapter leads are heard and never penalised for raising issues.",
+      ],
+      watch: "Recurring cross-squad escalations landing on leadership — a sign trust between chapters is thin.",
+    },
+    "Decision making": {
+      why: "In a Spotify/SAFe org, decisions belong at the squad while alignment stays at the tribe/ART level. Pulling them up kills autonomy.",
+      team: [
+        "Map decision rights with DACI/RAPID and publish which calls sit with squads, chapter leads, the RTE and Business Owners.",
+        "Prioritise the backlog with <b>WSJF</b> instead of HiPPO calls, so trade-offs are transparent.",
+        "Hold the line on delegating to squads — resist collectively clawing decisions back.",
+      ],
+      leader: [
+        "Be explicit about which decisions you reserve vs delegate, and stop being the default tie-breaker.",
+        "Share your opinion <i>last</i> so you don't anchor the room.",
+        "Measure your success by the decisions that never need to reach you.",
+      ],
+      watch: "If most decisions still flow up to leadership, squad autonomy isn't real yet.",
+    },
+    "Delivery & execution": {
+      why: "Predictable delivery is the ART's core promise. Leadership's job is to protect flow and clear impediments, not to push harder.",
+      team: [
+        "Treat <b>PI Planning</b> as the heartbeat — commit squad objectives and visualise dependencies on the program board.",
+        "Enforce WIP limits; track flow metrics (throughput, lead time, predictability), not just output.",
+        "Clear cross-squad blockers in Scrum-of-Scrums / ART Sync <i>within</i> the PI, not at its end.",
+      ],
+      leader: [
+        "Shield the team from mid-PI scope injection and reprioritisation churn.",
+        "Remove the impediments only you can — budget, cross-org dependencies, exec expectations.",
+        "Hold the team to outcomes, not activity; don't demand more output when flow is the real constraint.",
+      ],
+      watch: "Slipping PI objectives or a growing dependency count signal mounting execution debt.",
+    },
+    "Innovation & risk-taking": {
+      why: "High-performing R&D needs deliberate slack. SAFe's IP iteration and Spotify's hack time exist precisely for this.",
+      team: [
+        "Ring-fence the <b>Innovation &amp; Planning (IP) iteration</b> for spikes, experiments and hackdays.",
+        "Frame bets as hypotheses with explicit kill/scale gates; share results at the System Demo / I&amp;A.",
+        "Use <b>guilds/leagues</b> to incubate cross-tribe innovation no single squad owns.",
+      ],
+      leader: [
+        "Visibly fund and defend slack time — don't claw it back at the first delivery pressure.",
+        "Celebrate intelligent failures publicly so risk-taking feels safe.",
+        "Set the risk appetite and guardrails, then get out of the way.",
+      ],
+      watch: "If the IP iteration is routinely consumed by delivery, innovation capacity is effectively zero.",
+    },
+    "Communication & transparency": {
+      why: "Autonomy only scales on radical transparency — squads self-align when context flows freely.",
+      team: [
+        "Make objectives, the program board and key decisions visible by default (information radiators).",
+        "Use the <b>System Demo</b> and ART Sync as honest, integrated status — no green-shifting.",
+        "Reconnect squad missions to tribe/portfolio strategy every PI.",
+      ],
+      leader: [
+        "Over-communicate the <i>why</i> behind decisions — repeat it more than feels necessary.",
+        "Close the loop transparently on decisions made above the team (portfolio, budget, headcount).",
+        "Tell uncomfortable truths early; your candour sets the team's ceiling for honesty.",
+      ],
+      watch: "Surprises at PI boundaries mean information isn't flowing during the increment.",
+    },
+    "Accountability & ownership": {
+      why: "Squads own outcomes, not just output; chapter leads own craft, quality and people growth.",
+      team: [
+        "Make ownership explicit: squads own their PI objectives; chapter leads own standards and development.",
+        "Align a shared <b>Definition of Done / Ready</b> across the ART so \"done\" means the same everywhere.",
+        "Make commitments public at PI Planning and review them honestly at Inspect &amp; Adapt.",
+      ],
+      leader: [
+        "Hold people to commitments fairly and consistently — and follow through on your own.",
+        "Address under-performance directly rather than absorbing it or routing around it.",
+        "Delegate authority to match responsibility — don't hand over ownership without the power to act.",
+      ],
+      watch: "Diffused ownership (\"not our squad\") on cross-cutting work is the warning sign.",
+    },
+    "Crisis response": {
+      why: "Resilience under pressure is what separates a performing train from a high-performing one.",
+      team: [
+        "Run <b>blameless post-incident reviews</b>; feed actions into the next PI backlog, not a forgotten doc.",
+        "Rehearse incident playbooks and on-call rotations; pre-agree who decides during an incident.",
+        "Spread operational lessons across squads via an SRE guild/league.",
+      ],
+      leader: [
+        "Stay calm and create air cover during incidents — your composure regulates the team.",
+        "Protect blamelessness: make it unmistakably safe to surface bad news to you.",
+        "Once the dust settles, ensure the systemic fix is funded — not just the quick patch.",
+      ],
+      watch: "Repeating incident classes mean lessons aren't crossing squad boundaries.",
+    },
+    "Feedback & learning": {
+      why: "A learning organisation compounds. SAFe's Inspect &amp; Adapt and Spotify's retros are the engine that drives it.",
+      team: [
+        "Protect squad retros and run a tribe/ART-level <b>Inspect &amp; Adapt</b> each PI with measurable items.",
+        "Use chapters and guilds/leagues to <i>spread</i> practices — not just top-down broadcasts.",
+        "Track that improvement actions actually close; review them at the next I&amp;A.",
+      ],
+      leader: [
+        "Actively seek feedback on your own leadership and act on it visibly.",
+        "Invest in coaching and growth for chapter leads, not just delivery throughput.",
+        "Make learning time non-negotiable — defend it when the calendar gets tight.",
+      ],
+      watch: "Retro actions that never close mean the learning loop is broken.",
+    },
   };
+
+  // Level-specific guidance framed in the team's operating model
+  // (Spotify squads/tribes/chapters/leagues + SAFe ART/PI cadence).
+  const LEVEL_ORG = [
+    "Stand up clear squad missions and chapter rituals, and agree a leadership working agreement before layering on more ceremonies.",
+    "Use chapter forums and ART Sync to surface and work <i>through</i> cross-squad friction — don't suppress it. Storming is healthy here.",
+    "Stabilise the PI cadence and a shared Definition of Done across the ART, then start genuinely delegating decisions down to squads.",
+    "Optimise for flow with metrics, deepen your guild/league communities, and let squads self-organise around PI objectives.",
+    "Sustain through continuous Inspect &amp; Adapt, mentor other tribes, and contribute proven patterns to guilds/leagues — actively guard against complacency.",
+  ];
+
+  function levelIndex(level) { return LEVELS.indexOf(level); }
 
   function insight(kind, ic, title, body) {
     return `<div class="insight ${kind}"><span class="ic">${ic}</span><div><h4>${title}</h4><p>${body}</p></div></div>`;
+  }
+
+  // Renders a rich, two-track recommendation for a capability area:
+  // one block for the leadership team, one for the team's leader.
+  function recBody(cat, lead) {
+    const r = RECS[cat];
+    if (!r) return `${lead} Make this an explicit team goal for the next PI.`;
+    const track = (label, icon, items) =>
+      `<div class="rec-track"><span class="rec-label">${icon} ${label}</span>`
+      + `<ul class="rec-actions">${items.map(a => `<li>${a}</li>`).join("")}</ul></div>`;
+    return `${lead}<p class="why">${r.why}</p>`
+      + track("For the R&amp;D leadership team", "🧭", r.team)
+      + track("For the team's leader", "👤", r.leader)
+      + `<p class="watch"><b>Signal to watch:</b> ${r.watch}</p>`;
   }
 
   function renderLadder(score) {
