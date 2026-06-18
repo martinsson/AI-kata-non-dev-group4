@@ -144,6 +144,64 @@
     </section>
   </main>
 
+  <!-- Floating quick-add button -->
+  <button id="quickAddBtn" class="fab" title="Quick add a team event">+ Add event</button>
+
+  <!-- Quick-add prompt window (modal) -->
+  <div id="modal" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle">Add a team event</h3>
+        <button id="modalClose" class="modal-x" title="Close" aria-label="Close">✕</button>
+      </div>
+      <form id="quickForm">
+        <div class="field">
+          <label for="qTitle">What happened?</label>
+          <input id="qTitle" type="text" required placeholder="e.g. Critical prod incident during a release freeze" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="qDate">Date</label>
+            <input id="qDate" type="date" required />
+          </div>
+          <div class="field">
+            <label for="qCategory">Capability area</label>
+            <select id="qCategory"></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="qSeverity">Stakes / impact</label>
+            <select id="qSeverity">
+              <option value="2">Low — routine, contained</option>
+              <option value="4" selected>Medium — meaningful</option>
+              <option value="6">High — business-critical</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qRating">How well did the team handle it?</label>
+            <select id="qRating">
+              <option value="1">1 — Poorly (avoided, blamed, broke down)</option>
+              <option value="2">2 — Below par</option>
+              <option value="3" selected>3 — Adequate</option>
+              <option value="4">4 — Well</option>
+              <option value="5">5 — Excellently (owned, learned, grew)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="qNotes">Notes (optional)</label>
+          <textarea id="qNotes" rows="2" placeholder="Context, who was involved, what the team did…"></textarea>
+        </div>
+        <div class="impact-preview" id="qImpactPreview"></div>
+        <div class="form-actions modal-actions">
+          <button type="button" id="modalCancel" class="btn ghost">Cancel</button>
+          <button type="submit" class="btn primary">Rate event &amp; update level</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <footer class="foot">
     <span>Data is stored locally in your browser. Nothing leaves this device.</span>
   </footer>
