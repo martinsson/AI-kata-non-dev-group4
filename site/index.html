@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <title>Recherche d'emploi étudiant · France</title>
 <style>
   :root{
@@ -291,15 +292,34 @@
 
   distInput.addEventListener('input', function(){ distVal.textContent = distInput.value; });
 
-  function runSearch(){
+  // Filtre + affichage à partir d'un point d'origine déjà connu (aucun effet visuel ici).
+  function computeAndRender(origin, city){
     var q = document.getElementById('q').value;
     var contract = document.getElementById('contract').value;
     var domain = document.getElementById('domain').value;
-    var city = document.getElementById('city').value.trim() || "Paris";
     var maxDist = parseInt(distInput.value, 10);
+    var nq = normalize(q);
+    var matched = OFFERS
+      .filter(function(o){ return o.d < 7; })                                  // < 1 semaine
+      .filter(function(o){ return !contract || o.ct === contract; })
+      .filter(function(o){ return !domain || o.dom === domain; })
+      .filter(function(o){
+        if (!nq) return true;
+        var hay = normalize(o.t + " " + o.co + " " + o.dom + " " + o.desc);
+        return nq.split(/\s+/).every(function(w){ return hay.indexOf(w) !== -1; });
+      })
+      .map(function(o){
+        var coords = CITY[normalize(o.city)] || origin;
+        return Object.assign({}, o, { km: haversineKm(origin, coords) });
+      })
+      .filter(function(o){ return o.km <= maxDist; })
+      .sort(function(a,b){ return a.d - b.d || a.km - b.km; });
+    render(matched, city, maxDist);
+  }
 
-    // On ne vide PAS la liste : on la grise pendant la mise à jour pour éviter
-    // l'effet de rechargement, puis on la remplace en douceur.
+  // Recherche déclenchée par l'utilisateur : grise brièvement la liste pendant le géocodage.
+  function runSearch(){
+    var city = document.getElementById('city').value.trim() || "Paris";
     go.disabled = true; refreshBtn.disabled = true;
     results.classList.add('loading');
     statusEl.textContent = "Mise à jour des offres autour de « " + city + " »…";
@@ -311,24 +331,7 @@
         statusEl.textContent = "Impossible de localiser « " + city + " ». Essayez une autre ville.";
         return;
       }
-      var nq = normalize(q);
-      var matched = OFFERS
-        .filter(function(o){ return o.d < 7; })                                  // < 1 semaine
-        .filter(function(o){ return !contract || o.ct === contract; })
-        .filter(function(o){ return !domain || o.dom === domain; })
-        .filter(function(o){
-          if (!nq) return true;
-          var hay = normalize(o.t + " " + o.co + " " + o.dom + " " + o.desc);
-          return nq.split(/\s+/).every(function(w){ return hay.indexOf(w) !== -1; });
-        })
-        .map(function(o){
-          var coords = CITY[normalize(o.city)] || origin;
-          return Object.assign({}, o, { km: haversineKm(origin, coords) });
-        })
-        .filter(function(o){ return o.km <= maxDist; })
-        .sort(function(a,b){ return a.d - b.d || a.km - b.km; });
-
-      render(matched, city, maxDist);
+      computeAndRender(origin, city);
     });
   }
 
@@ -371,8 +374,14 @@
     }).join("");
   }
 
-  // Recherche initiale pour montrer un résultat au chargement.
-  form.dispatchEvent(new Event('submit'));
+  // Affichage initial STATIQUE : rendu immédiat, sans grisé ni fondu ni message
+  // « Mise à jour… », pour qu'ouvrir la page ne ressemble jamais à un rechargement.
+  // On utilise directement les coordonnées locales de la ville par défaut.
+  (function initial(){
+    var city = document.getElementById('city').value.trim() || "Paris";
+    var origin = CITY[normalize(city)] || CITY["paris"];
+    computeAndRender(origin, city);
+  })();
 })();
 </script>
 </body>
